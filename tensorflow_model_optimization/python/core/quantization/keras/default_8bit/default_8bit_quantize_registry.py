@@ -463,6 +463,15 @@ class Default8BitActivationQuantizeConfig(QuantizeConfig):
   decision to quantize depends on the specific activation type.
   """
 
+  def __init__(self, disable_output_quantizers=False):
+    """Construct a default QuantizeConfig for Activation layers.
+
+    Args:
+      disable_output_quantizers: Disable quantizer even if activation is
+        supported.
+    """
+    self._disable_output_quantizers = disable_output_quantizers
+
   def _assert_activation_layer(self, layer):
     if not isinstance(layer, layers.Activation):
       raise RuntimeError(
@@ -483,8 +492,18 @@ class Default8BitActivationQuantizeConfig(QuantizeConfig):
   def set_quantize_activations(self, layer, quantize_activations):
     self._assert_activation_layer(layer)
 
+  @property
+  def disable_output_quantizers(self):
+    return self._disable_output_quantizers
+
+  @disable_output_quantizers.setter
+  def disable_output_quantizers(self, value):
+    self._disable_output_quantizers = value
+
   def get_output_quantizers(self, layer):
     self._assert_activation_layer(layer)
+    if self.disable_output_quantizers:
+      return []
 
     if not hasattr(layer.activation, '__name__'):
       raise ValueError('Activation {} not supported by '
@@ -504,7 +523,11 @@ class Default8BitActivationQuantizeConfig(QuantizeConfig):
                          layer.activation))
 
   def get_config(self):
-    return {}
+    return {'disable_output_quantizers': self.disable_output_quantizers}
+
+  @classmethod
+  def from_config(cls, config):
+    return cls(**config)
 
 
 class Default8BitConvQuantizeConfig(Default8BitQuantizeConfig):

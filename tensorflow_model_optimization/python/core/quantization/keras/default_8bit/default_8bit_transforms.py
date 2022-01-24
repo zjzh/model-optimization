@@ -628,6 +628,9 @@ class ConcatTransform(transforms.Transform):
   def _disable_output_quantize(self, quantize_config):
     # TODO(pulkitb): Disabling quantize_config may also require handling
     # activation quantizers. Handle that properly.
+    if hasattr(quantize_config, 'disable_output_quantizers'):
+      quantize_config.disable_output_quantizers = True
+
     quantize_config.get_output_quantizers = lambda layer: []
 
   def replacement(self, match_layer):
